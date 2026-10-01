@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raja Rani 👑</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+margin:0;
+min-height:100vh;
+font-family:Arial,sans-serif;
+color:white;
+background:linear-gradient(135deg,#12091f,#28104a,#0b0712);
+}
+
+.app{
+max-width:600px;
+margin:auto;
+padding:25px 18px;
+}
+
+h1{
+text-align:center;
+font-size:40px;
+margin:10px 0;
+}
+
+.subtitle{
+text-align:center;
+color:#d8c8ee;
+margin-bottom:25px;
+}
+
+.card{
+background:rgba(30,20,45,.95);
+border:1px solid #76549b;
+border-radius:22px;
+padding:22px;
+box-shadow:0 15px 40px rgba(0,0,0,.5);
+margin-bottom:18px;
+}
+
+h2{
+text-align:center;
+}
+
+label{
+display:block;
+margin:15px 0 7px;
+color:#d9c8eb;
+}
+
+select,input{
+width:100%;
+padding:13px;
+border-radius:12px;
+border:1px solid #76549b;
+background:#100b17;
+color:white;
+font-size:16px;
+}
+
+button{
+width:100%;
+padding:14px;
+margin-top:12px;
+border:none;
+border-radius:13px;
+font-size:16px;
+font-weight:bold;
+background:linear-gradient(135deg,#f1c75b,#a66b16);
+color:#160e05;
+}
+
+button.secondary{
+background:#30223d;
+color:white;
+border:1px solid #76549b;
+}
+
+.hidden{
+display:none;
+}
+
+.player{
+display:flex;
+gap:10px;
+align-items:center;
+margin:10px 0;
+}
+
+.player span{
+width:25px;
+}
+
+.roleIcon{
+font-size:65px;
+text-align:center;
+margin:25px 0 10px;
+}
+
+.roleName{
+font-size:30px;
+font-weight:bold;
+text-align:center;
+}
+
+.message{
+text-align:center;
+color:#d8c8e8;
+margin:15px 0;
+}
+
+.choice{
+background:#251936;
+color:white;
+border:1px solid #76549b;
+}
+
+.score{
+display:flex;
+justify-content:space-between;
+padding:13px;
+border-bottom:1px solid #3c2d4c;
+}
+
+.result{
+text-align:center;
+font-size:19px;
+line-height:1.6;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<h1>👑 Raja Rani</h1>
+<div class="subtitle">Royal Secret Role Game</div>
+
+<!-- SETUP -->
+
+<div id="setup" class="card">
+
+<h2>⚔️ Create Game</h2>
+
+<label>Number of Players</label>
+
+<select id="playerCount" onchange="createNameBoxes()">
+<option value="4">4 Players</option>
+<option value="5">5 Players</option>
+<option value="6">6 Players</option>
+<option value="7">7 Players</option>
+<option value="8">8 Players</option>
+</select>
+
+<div id="nameBoxes"></div>
+
+<button onclick="startGame()">👑 Start Game</button>
+
+</div>
+
+
+<!-- ROLE REVEAL -->
+
+<div id="reveal" class="card hidden">
+
+<h2 id="playerTurn"></h2>
+
+<div class="roleIcon" id="roleIcon">🔒</div>
+
+<div class="roleName" id="roleName">
+SECRET
+</div>
+
+<div class="message" id="roleMessage">
+Only this player should look at the screen.
+</div>
+
+<button id="revealButton" onclick="revealRole()">
+👁️ Reveal My Role
+</button>
+
+<button id="nextButton"
+class="secondary hidden"
+onclick="nextPlayer()">
+Hide & Pass Phone →
+</button>
+
+</div>
+
+
+<!-- CHOR GUESS -->
+
+<div id="guess" class="card hidden">
+
+<h2>🎯 Find the Chor</h2>
+
+<div class="message" id="mantriInfo"></div>
+
+<p style="text-align:center">
+🧠 Mantri must choose the 🥷 Chor
+</p>
+
+<div id="playerChoices"></div>
+
+</div>
+
+
+<!-- RESULT -->
+
+<div id="result" class="card hidden">
+
+<h2>🏆 Round Result</h2>
+
+<div class="result" id="resultMessage"></div>
+
+<h2>📊 Scoreboard</h2>
+
+<div id="scores"></div>
+
+<button onclick="newRound()">
+🔄 New Round
+</button>
+
+</div>
+
+</div>
+
+
+<script>
+
+let players=[];
+let roles=[];
+let scores={};
+let currentPlayer=0;
+let mantriIndex=0;
+let chorIndex=0;
+
+
+/* CREATE PLAYER NAME BOXES */
+
+function createNameBoxes(){
+
+let count=Number(
+document.getElementById("playerCount").value
+);
+
+let html="";
+
+for(let i=1;i<=count;i++){
+
+html+=`
+<div class="player">
+<span>${i}.</span>
+<input
+id="player${i}"
+placeholder="Player ${i}">
+</div>
+`;
+
+}
+
+document.getElementById("nameBoxes").innerHTML=html;
+
+}
+
+createNameBoxes();
+
+
+/* START GAME */
+
+function startGame(){
+
+let count=Number(
+document.getElementById("playerCount").value
+);
+
+players=[];
+
+for(let i=1;i<=count;i++){
+
+let name=document
+.getElementById("player"+i)
+.value
+.trim();
+
+if(name===""){
+name="Player "+i;
+}
+
+players.push(name);
+
+if(scores[name]===undefined){
+scores[name]=0;
+}
+
+}
+
+
+/* CREATE ROLES */
+
+roles=[
+"Raja",
+"Rani",
+"Mantri",
+"Chor"
+];
+
+while(roles.length<count){
+roles.push("Sipahi");
+}
+
+
+/* RANDOMIZE */
+
+roles.sort(
+()=>Math.random()-0.5
+);
+
+
+/* FIND SPECIAL ROLES */
+
+mantriIndex=roles.indexOf("Mantri");
+chorIndex=roles.indexOf("Chor");
+
+currentPlayer=0;
+
+
+/* CHANGE SCREEN */
+
+document
+.getElementById("setup")
+.classList.add("hidden");
+
+document
+.getElementById("reveal")
+.classList.remove("hidden");
+
+showPlayer();
+
+}
+
+
+/* SHOW CURRENT PLAYER */
+
+function showPlayer(){
+
+document.getElementById("playerTurn")
+.innerText=
+"Player "+(currentPlayer+1)+
+": "+players[currentPlayer];
+
+document.getElementById("roleIcon")
+.innerText="🔒";
+
+document.getElementById("roleName")
+.innerText="SECRET ROLE";
+
+document.getElementById("roleMessage")
+.innerText=
+"Only "+players[currentPlayer]+
+" should look at the screen.";
+
+document
+.getElementById("revealButton")
+.classList.remove("hidden");
+
+document
+.getElementById("nextButton")
+.classList.add("hidden");
+
+}
+
+
+/* REVEAL ROLE */
+
+function revealRole(){
+
+let role=roles[currentPlayer];
+
+let icons={
+"Raja":"👑",
+"Rani":"👸",
+"Mantri":"🧠",
+"Chor":"🥷",
+"Sipahi":"⚔️"
+};
+
+document.getElementById("roleIcon")
+.innerText=icons[role];
+
+document.getElementById("roleName")
+.innerText=role;
+
+document.getElementById("roleMessage")
+.innerText=
+"Remember your role. Don't show anyone!";
+
+document
+.getElementById("revealButton")
+.classList.add("hidden");
+
+document
+.getElementById("nextButton")
+.classList.remove("hidden");
+
+}
+
+
+/* NEXT PLAYER */
+
+function nextPlayer(){
+
+currentPlayer++;
+
+if(currentPlayer<players.length){
+
+showPlayer();
+
+}else{
+
+showGuess();
+
+}
+
+}
+
+
+/* MANTRI GUESS SCREEN */
+
+function showGuess(){
+
+document
+.getElementById("reveal")
+.classList.add("hidden");
+
+document
+.getElementById("guess")
+.classList.remove("hidden");
+
+document.getElementById("mantriInfo")
+.innerHTML=
+"🧠 <b>"+players[mantriIndex]+
+"</b> is the Mantri.";
+
+let html="";
+
+for(let i=0;i<players.length;i++){
+
+if(i!==mantriIndex){
+
+html+=`
+<button
+class="choice"
+onclick="makeGuess(${i})">
+${players[i]}
+</button>
+`;
+
+}
+
+}
+
+document
+.getElementById("playerChoices")
+.innerHTML=html;
+
+}
+
+
+/* MAKE GUESS */
+
+function makeGuess(selected){
+
+document
+.getElementById("guess")
+.classList.add("hidden");
+
+document
+.getElementById("result")
+.classList.remove("hidden");
+
+
+if(selected===chorIndex){
+
+scores[players[mantriIndex]]+=100;
+
+document.getElementById("resultMessage").innerHTML=
+"🎯 Correct!<br><br>"+
+"🥷 "+players[chorIndex]+" was the Chor.<br><br>"+
+"🧠 "+players[mantriIndex]+
+" gets <b>+100 points!</b>";
+
+}else{
+
+scores[players[chorIndex]]+=100;
+
+document.getElementById("resultMessage").innerHTML=
+"❌ Wrong Guess!<br><br>"+
+"The real Chor was 🥷 "+
+players[chorIndex]+
+".<br><br>"+
+"🥷 Chor gets <b>+100 points!</b>";
+
+}
+
+showScores();
+
+}
+
+
+/* SCOREBOARD */
+
+function showScores(){
+
+let sorted=players
+.map(name=>({
+name:name,
+score:scores[name]
+}))
+.sort((a,b)=>b.score-a.score);
+
+let html="";
+
+sorted.forEach((player,index)=>{
+
+html+=`
+<div class="score">
+<span>${index+1}. ${player.name}</span>
+<b>${player.score}</b>
+</div>
+`;
+
+});
+
+document.getElementById("scores").innerHTML=html;
+
+}
+
+
+/* NEW ROUND */
+
+function newRound(){
+
+roles=[
+"Raja",
+"Rani",
+"Mantri",
+"Chor"
+];
+
+while(roles.length<players.length){
+roles.push("Sipahi");
+}
+
+roles.sort(
+()=>Math.random()-0.5
+);
+
+mantriIndex=roles.indexOf("Mantri");
+chorIndex=roles.indexOf("Chor");
+
+currentPlayer=0;
+
+document
+.getElementById("result")
+.classList.add("hidden");
+
+document
+.getElementById("reveal")
+.classList.remove("hidden");
+
+showPlayer();
+
+}
+
+</script>
+
+</body>
+</html>
